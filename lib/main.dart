@@ -4,32 +4,109 @@ import 'package:english_words/english_words.dart';
 void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
+  /** Build widget  */
   @override
   Widget build(BuildContext context){
         return MaterialApp(
-          title: 'Welcome flutter',
-          home: Scaffold(
-            appBar: AppBar(
-              title: Text("Welcome to Flutter"),
-              backgroundColor: Color(0xFF009688)
-            ),
-            body: Center(
-              //child: Text('Hello World'),
-              child: RandomWords(),
-            ),
+          title: 'Startup Name Generator',
+          theme: new ThemeData(
+            primaryColor: Colors.white
           ),
+          home: RandomWords()
 
       );
 
   }
 }
 class RandomWordsState extends State<RandomWords> {
-  @override
-  Widget build(BuildContext context) {
-    final wordPair = WordPair.random();
-    return Text(wordPair.asPascalCase);
-  }
+    /** get Suggestions from wordPair */
+    final List<WordPair> _suggestions = <WordPair>[];
+    /**  Declare a set of wordPair */
+    final Set<WordPair> _saved = new Set<WordPair>();
+    /**  Declare a TextStyle  */
+    final TextStyle _biggerFont = const TextStyle(fontSize: 18.0);
+    //..
+    /** build Suggestions widget  */
+    Widget _buildSuggestions() {
+      /** return a list view of suggestions */
+      return ListView.builder(
+        padding: const EdgeInsets.all(16.0) ,
+        itemBuilder: (context, i){
+          if(i.isOdd) return Divider();
 
+          final index = i ~/ 2 ;
+          if(index >= _suggestions.length) {
+            _suggestions.addAll(generateWordPairs().take(10));
+          }
+          return _buildRow(_suggestions[index]);
+        });
+    }
+
+    Widget _buildRow(WordPair pair){
+      final bool alreadySaved = _saved.contains(pair);
+      return ListTile(
+        title: Text(
+          pair.asPascalCase,
+          style: _biggerFont,
+        ),
+        trailing: new Icon(
+          alreadySaved ? Icons.favorite : Icons.favorite_border ,
+          color: alreadySaved ? Colors.red : null,
+        ),
+        onTap: (){
+          setState(() {
+            if(alreadySaved){
+              _saved.remove(pair);
+            } else {
+              _saved.add(pair);
+            }
+          });
+        },
+      );
+    }
+
+    @override
+    Widget build(BuildContext context){
+      return Scaffold(
+          appBar: AppBar(
+            title: Text('startup Name Generator'),
+            actions: <Widget>[
+              new IconButton(icon: const Icon(Icons.list), onPressed: _pushSaved),
+            ],
+          ),
+        body: _buildSuggestions(),
+      );
+    }
+    void _pushSaved(){
+        Navigator.of(context).push(
+          new MaterialPageRoute(
+              builder: (BuildContext context){
+                final Iterable<ListTile> tiles = _saved.map(
+                    (WordPair pair){
+                      return new ListTile(
+                        title: new Text(
+                          pair.asPascalCase,
+                          style: _biggerFont,
+                        ),
+                      );
+                    }
+                );
+                final List<Widget> divided = ListTile
+                    .divideTiles(
+                  tiles: tiles,
+                  context: context)
+                .toList();
+                return new Scaffold(
+                  appBar: new AppBar(
+                    title: const Text('Saved Suggestions'),
+                  ),
+                  body: new ListView(children: divided),
+                );
+              }
+          )
+        );
+
+    }
 }
 class RandomWords extends StatefulWidget {
   @override
